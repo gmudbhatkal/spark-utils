@@ -40,21 +40,29 @@ package object functions {
   def plusDays(date: String, numDays: Int): String = {
     LocalDate.parse(date, DateTimeFormatter.ISO_DATE).minusDays(-numDays).toString
   }
-   /**
+
+  /**
     * Returns a list of dates that lie between two given dates
+    *
     * @param start - start date (yyyy-mm-dd)
-    * @param end - end date (yyyy-mm-dd)
+    * @param end   - end date (yyyy-mm-dd)
     * @return The dates between start and end in the form of a sequence of strings
     */
-  def dateRange(start:String, end: String): IndexedSeq[String] = {
-    val days = ChronoUnit.DAYS.between(LocalDate.parse(start, DateTimeFormatter.ISO_DATE),LocalDate.parse(end, DateTimeFormatter.ISO_DATE)).toInt
-    require(days>=0, s"Start date($start) must be before End date($end)!")
-    (0 to days).map(d=>plusDays(start,d))
+  def dateRange(start: String, end: String): IndexedSeq[String] = {
+    val days = ChronoUnit.DAYS.between(LocalDate.parse(start, DateTimeFormatter.ISO_DATE), LocalDate.parse(end, DateTimeFormatter.ISO_DATE)).toInt
+    require(days >= 0, s"Start date ($start) must be before end date ($end)!")
+    (0 to days).map(d => plusDays(start, d))
   }
 
-  def today(): String =  LocalDate.now().toString
+  /**
+    * @return Today's date in UTC(String)
+    */
+  def today: String = LocalDate.now().toString
 
-  def yesterday(): String = LocalDate.now().minusDays(1).toString
+  /**
+    * @return Yesterday's date in UTC(String)
+    */
+  def yesterday: String = LocalDate.now().minusDays(1).toString
 
   implicit class DatasetFunctions[T](val ds: Dataset[T]) {
     /**

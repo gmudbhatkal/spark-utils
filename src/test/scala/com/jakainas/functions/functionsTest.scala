@@ -5,6 +5,7 @@ import com.jakainas.functions.functionsTest.TestData
 class functionsTest extends SparkTest {
   import org.apache.spark.sql.functions._
   import spark.implicits._
+  import java.sql.Date
 
   test("distinct by removes duplicates") {
     // with a dataset
@@ -50,6 +51,15 @@ class functionsTest extends SparkTest {
     an [IllegalArgumentException] should be thrownBy dateRange("2018-01-14", "2018-01-10")
   }
 
+  test("return today's date") {
+    val tdy = new Date(System.currentTimeMillis())
+    today shouldEqual tdy.toString
+  }
+
+  test("return yesterday's date") {
+    val yday = new Date(System.currentTimeMillis()-24*60*60*1000)
+    yesterday shouldEqual yday.toString
+  }
 }
 
 object functionsTest {
