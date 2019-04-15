@@ -1,5 +1,6 @@
 package com.jakainas
 
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -77,6 +78,51 @@ package object functions {
    */
   def to_date_str(year: Column, month: Column, day: Column): Column = {
     date_format(concat(year, lit("-"), month, lit("-"), day), "yyyy-MM-dd")
+  }
+
+  /**
+    * Convert a date into a list of form (year,month,day)
+    * @param date - date in the form of a string('yyyy-mm-dd')
+    * @return a list containing the year, month and day of the date
+    */
+  def expandDate(date: String) = {
+    val d = LocalDate.parse(date, DateTimeFormatter.ISO_DATE)
+    val year = d.getYear
+    val month = d.getMonthValue
+    val day = d.getDayOfMonth
+    List(year, month, day)
+  }
+
+  /**
+    * Convert a dateRange into its corresponding SQL query
+    * dateRangeToSql("2017-01-09", "2019-04-10") returns: "(year = 2017 and month > 1) or (year = 2017 and month = 1 and day >= 9) or year = 2018 or (year = 2019 and ((month < 4) or (month = 4 and day <= 10)))"
+    * @param date1 - some date ('yyyy-mm-dd')
+    * @param date2 - some date ('yyyy-mm-dd')
+    * @return SQL query in string form
+    */
+  def dateRangeToSql(date1: String, date2: String) = {
+    val dateFormat = new SimpleDateFormat("yyyy-mm-dd")
+    val check = dateFormat.parse(date1).compareTo(dateFormat.parse(date2))
+    var start = List[Int]()
+    var end = List[Int]()
+    val yearsDiff = ChronoUnit.YEARS.between(LocalDate.parse(date1, DateTimeFormatter.ISO_DATE), LocalDate.parse(date2, DateTimeFormatter.ISO_DATE)).toInt
+
+    if (check != 0) {
+      if (check > 0) {
+        start = expandDate(date2)
+        end = expandDate(date1)
+      }
+      else {
+        start = expandDate(date1)
+        end = expandDate(date2)
+      }
+      val years = (1 to (yearsDiff - 1)).map(y => start(0) + y).toList
+      s"(year = ${start(0)} and month > ${start(1)}) or (year = ${start(0)} and month = ${start(1)} and day >= ${start(2)}) or year ${if (years.length < 2) s"= ${years.head}" else s"in (${years.mkString(",")})"} or (year = ${end(0)} and ((month < ${end(1)}) or (month = ${end(1)} and day <= ${end(2)})))"
+    }
+    else {
+      start = expandDate(date2)
+      s"year = ${start(0)} and month = ${start(1)} and day = ${start(2)}"
+    }
   }
 
   implicit class DatasetFunctions[T](private val ds: Dataset[T]) extends AnyVal {

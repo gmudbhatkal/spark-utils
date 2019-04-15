@@ -124,6 +124,12 @@ class functionsTest extends SparkTest {
     spark.load[PartData].collect() should contain theSameElementsAs raw
     FileUtils.deleteDirectory(new java.io.File("/tmp/footables"))
   }
+
+  test("return a range of dates as an SQL query") {
+    dateRangeToSql("2017-01-09", "2019-04-10") shouldEqual "(year = 2017 and month > 1) or (year = 2017 and month = 1 and day >= 9) or year = 2018 or (year = 2019 and ((month < 4) or (month = 4 and day <= 10)))"
+    dateRangeToSql("2017-01-09", "2017-01-09") shouldEqual "year = 2017 and month = 1 and day = 9"
+    dateRangeToSql("2015-01-09", "2019-04-10") shouldEqual "(year = 2015 and month > 1) or (year = 2015 and month = 1 and day >= 9) or year in (2016,2017,2018) or (year = 2019 and ((month < 4) or (month = 4 and day <= 10)))"
+  }
 }
 
 object functionsTest {
