@@ -100,14 +100,15 @@ package object functions {
     * @param date2 - some date ('yyyy-mm-dd')
     * @return SQL query in string form
     */
-  def dateRangeToSql(date1: String, date2: String) = {
+  def dateRangeToSql(date1: String, date2: String): String = {
     val dateFormat = new SimpleDateFormat("yyyy-mm-dd")
     val check = dateFormat.parse(date1).compareTo(dateFormat.parse(date2))
     var start = List[Int]()
     var end = List[Int]()
-    val yearsDiff = ChronoUnit.YEARS.between(LocalDate.parse(date1, DateTimeFormatter.ISO_DATE), LocalDate.parse(date2, DateTimeFormatter.ISO_DATE)).toInt
-
     if (check != 0) {
+      val yearsDiff = ChronoUnit.YEARS.between(LocalDate.parse(date1, DateTimeFormatter.ISO_DATE), LocalDate.parse(date2, DateTimeFormatter.ISO_DATE)).toInt
+      val monthsDiff = ChronoUnit.MONTHS.between(LocalDate.parse(date1, DateTimeFormatter.ISO_DATE), LocalDate.parse(date2, DateTimeFormatter.ISO_DATE)).toInt
+
       if (check > 0) {
         start = expandDate(date2)
         end = expandDate(date1)
@@ -116,8 +117,17 @@ package object functions {
         start = expandDate(date1)
         end = expandDate(date2)
       }
-      val years = (1 to (yearsDiff - 1)).map(y => start(0) + y).toList
-      s"(year = ${start(0)} and month > ${start(1)}) or (year = ${start(0)} and month = ${start(1)} and day >= ${start(2)}) or year ${if (years.length < 2) s"= ${years.head}" else s"in (${years.mkString(",")})"} or (year = ${end(0)} and ((month < ${end(1)}) or (month = ${end(1)} and day <= ${end(2)})))"
+      val years = (1 until yearsDiff).map(y => start.head + y).toList
+
+      if (monthsDiff == 0 && yearsDiff == 0) {
+        s"(year = ${start(0)} and month = ${start(1)} and day between ${start(2)} and ${end(2)})"
+      }
+      else if (yearsDiff == 0) {
+        s"(year = ${start(0)} and ((month = ${start(1)} and day >= ${start(2)}) or (month = ${end(1)} and day <= ${end(2)}))"
+      }
+      else {
+        s"(year = ${start(0)} and month = ${start(1)} and day >= ${start(2)})${if (!years.isEmpty) {s" or year ${if (years.length == 1) s"= ${years.head}" else if (years.length > 2) s"in (${years.mkString(",")})"} "} else " "}or (year = ${end(0)} and ((month < ${end(1)}) or (month = ${end(1)} and day <= ${end(2)})))"
+      }
     }
     else {
       start = expandDate(date2)
